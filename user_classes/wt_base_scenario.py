@@ -1,22 +1,87 @@
-from locust import task, SequentialTaskSet, HttpUser, constant_pacing, events
+from locust import task, SequentialTaskSet, HttpUser, FastHttpUser, constant_pacing, events
 from config.config import cfg, logger
+import sys, re
+from utils.assertion import check_http_response
+from utils.non_test_methods import open_csv_field
+import random
 
+class PurchaseFlightTicket(SequentialTaskSet):
 
-class PurchaseFlightTicket(SequentialTaskSet): # класс с задачами (содержит основной сценарий)
+    test_users_csv_file_path = './test_data/user_data_test.csv'
+
+    def on_start(self) -> None:
+
+        @task
+        def uc_01_getHomePage(self) -> None:
+
+            self.test_users_data = open_csv_field(self.test_users_csv_file_path)
+
+            self.client.get(
+                '/WebTours/',
+                name='REQ_01_1_/WebTours/',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate'
+                },
+                #debug_stream=sys.stderr
+            )
+
+            self.client.get(
+                '/cgi-bin/welcome.pl?signOff=true',
+                name='REQ_01_2_/cgi-bin/welcome.pl?signOff=true',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate'
+                },
+                allow_redirects=False,
+                #debug_stream=sys.stderr
+            )
+
+            with self.client.get(
+                '/cgi-bin/nav.pl?in=home',
+                name='REQ_01_3_/cgi-bin/nav.pl?in=home',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate'
+                },
+                allow_redirects=False,
+                catch_response=True,
+                # debug_stream=sys.stderr
+            ) as req_01_3_response:
+                check_http_response(req_01_3_response, "name=\"userSession\"")
+            self.userSession = re.search(r'name=\"userSession\" value=\"(.*)\"/>', req_01_3_response.text).group(1)
+
+        @task
+        def uc_01_getLogin(self) -> None:
+
+            self.user_data_row = random.choice(self.test_users_data)
+
+            userName = self.user_data_row['username']
+            password = self.user_data_row['password']
+            req_body_02_01 = f"userSession={self.userSession}&username={userName}&password={password}&login.x=0&login.y=0&JSFormSubmit=off"
+
+            with self.client.post(
+                '/cgi-bin/login.pl',
+                name='REQ_02_1_/cgi-bin/login.pl',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'content-type': 'application/x-www-form-urlencoded'
+                },
+                data=req_body_02_01,
+                    catch_response=True,
+                debug_stream=sys.stderr
+            ) as req_02_1_response:
+                check_http_response(req_02_1_response, "User password was correct")
+
+        uc_01_getHomePage(self)
+        uc_01_getLogin(self)
+
     @task
-    def uc_00_getHomePage(self) -> None:
-        r00_01_response = self.client.get(
-            '/WebTours/',
-            name='REQ_00_0_getHtml',
-            headers={
-                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Encoding': 'gzip, deflate'
-            }
-        )
-        print(r00_01_response.status_code)
-        print(r00_01_response.text)
+    def fixTest(self):
+        pass
 
-class WebToursBaseUserClass(HttpUser): # юзер-класс, принимающий в себя основные параметры теста
+class WebToursBaseUserClass(FastHttpUser):
     wait_time = constant_pacing(cfg.pacing)
     host = cfg.url
 
