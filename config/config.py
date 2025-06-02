@@ -9,18 +9,27 @@ from pydantic import BaseModel, Field
 """
 class ScenarioConfig(BaseModel):
     included: bool
-    url: str
     weight: int
 
 """ 
     Здесь должны быть описаны классы конфигурации сценариев 
 """
+class WebToursBaseScenarioConfig(ScenarioConfig):
+    ...
 
+class WebToursCancelScenarioConfig(ScenarioConfig):
+    ...
 
 
 
 class Config(BaseSettings): # данный класс является основным классом конфига, в него должны быть переданы все описанные классы конфига
-    pass
+    locust_locustfile: str =  Field('./locustfile.py', env='LOCUST_LOCUSTFILE')
+    url: str = Field('http://localhost:1080', env='WEBTOURS_URL')
+    loadshape_type: str = Field('baseline', env='LOADSHAPE_TYPE')
+    webtours_base: WebToursBaseScenarioConfig
+    webtours_cancel: WebToursCancelScenarioConfig
+    pacing: int = Field(5, env='CONST_PACING')
+
 
 """  
     класс LogConfig описывает логгер, с помощью которого имеется возможность логировать любые события
