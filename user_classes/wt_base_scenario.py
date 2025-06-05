@@ -70,9 +70,20 @@ class PurchaseFlightTicket(SequentialTaskSet):
                 },
                 data=req_body_02_01,
                     catch_response=True,
-                debug_stream=sys.stderr
+                # debug_stream=sys.stderr
             ) as req_02_1_response:
                 check_http_response(req_02_1_response, "User password was correct")
+
+            with self.client.get(
+                '/cgi-bin/login.pl?intro=true',
+                name='REQ_02_2_/cgi-bin/login.pl?intro=true',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate'
+                },
+                debug_stream=sys.stderr
+            ) as req_02_2_response:
+                check_http_response(req_02_2_response, f"Welcome, <b>{userName}</b>")
 
         uc_01_getHomePage(self)
         uc_01_getLogin(self)
