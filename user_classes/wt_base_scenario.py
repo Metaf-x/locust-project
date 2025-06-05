@@ -73,6 +73,8 @@ class PurchaseFlightTicket(SequentialTaskSet):
             with self.client.get(
                 '/cgi-bin/login.pl?intro=true',
                 name='REQ_02_2_/cgi-bin/login.pl?intro=true',
+                allow_redirects=False,
+                catch_response=True,
                 headers=COMMON_HEADERS,
                 # debug_stream=sys.stderr
             ) as req_02_2_response:
