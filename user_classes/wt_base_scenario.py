@@ -81,12 +81,34 @@ class PurchaseFlightTicket(SequentialTaskSet):
                     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Encoding': 'gzip, deflate'
                 },
-                debug_stream=sys.stderr
+                # debug_stream=sys.stderr
             ) as req_02_2_response:
                 check_http_response(req_02_2_response, f"Welcome, <b>{userName}</b>")
 
+        @task
+        def uc_01_getLogout(self) -> None:
+
+            self.client.get(
+                '/cgi-bin/welcome.pl?signOff=1',
+                name='REQ_03_1_/cgi-bin/welcome.pl?signOff=1',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate'
+                },
+            )
+
+            self.client.get(
+                '/cgi-bin/nav.pl?in=home',
+                name='REQ_03_2_/cgi-bin/cgi-bin/nav.pl?in=home',
+                headers={
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate'
+                },
+            )
+
         uc_01_getHomePage(self)
         uc_01_getLogin(self)
+        uc_01_getLogout(self)
 
     @task
     def fixTest(self):
